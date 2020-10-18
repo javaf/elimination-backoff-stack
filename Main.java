@@ -2,7 +2,7 @@ import java.util.*;
 
 class Main {
   static Deque<Integer> stack;
-  static BackoffStack<Integer> concurrentStack;
+  static EliminationBackoffStack<Integer> concurrentStack;
   static List<Integer>[] poppedValues;
   static int TH = 10, NUM = 1000;
 
@@ -66,7 +66,7 @@ class Main {
   @SuppressWarnings("unchecked")
   static void testThreads(boolean backoff) {
     stack = new ArrayDeque<>();
-    concurrentStack = new BackoffStack<>();
+    concurrentStack = new EliminationBackoffStack<>();
     poppedValues = new List[TH];
     for (int i=0; i<TH; i++)
       poppedValues[i] = new ArrayList<>();
@@ -89,7 +89,8 @@ class Main {
     testThreads(false);
     log("Was LIFO? "+wasLIFO(NUM));
     log("");
-    log("Starting "+TH+" threads with backoff stack");
+    String name = "elimination backoff stack";
+    log("Starting "+TH+" threads with "+name);
     testThreads(true);
     log("Was LIFO? "+wasLIFO(NUM));
     log("");

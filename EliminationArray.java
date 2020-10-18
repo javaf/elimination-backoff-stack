@@ -25,8 +25,8 @@ class EliminationArray<T> {
   }
 
   // 1. Try exchanging value on a random exchanger.
-  public T visit(T x, int range) throws TimeoutException {
-    int i = random.nextInt(range);
+  public T visit(T x) throws TimeoutException {
+    int i = random.nextInt(exchangers.length);
     return exchangers[i].exchange(x, TIMEOUT, UNIT);
   }
 }
