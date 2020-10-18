@@ -2,22 +2,38 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+// Elimination-backoff stack is an unbounded lock-free LIFO linked list, that eliminates concurrent pairs of pushes and pops with exchanges.
 
 class EliminationBackoffStack<T> {
   AtomicReference<Node<T>> top;
   EliminationArray<T> eliminationArray;
-  static final int CAPACITY = 1;
+  static final int CAPACITY = 100;
+  static final long TIMEOUT = 10;
+  static final TimeUnit UNIT = TimeUnit.MILLISECONDS;
   static ThreadLocal<RangePolicy> policy = new ThreadLocal<>() {
     protected RangePolicy initialValue() {
       return new RangePolicy(CAPACITY);
     }
   };
+  // top: top of stack (null if empty)
+  // eliminationArray: for exchanging values between push, pop
+  // CAPACITY: capacity of elimination array
+  // TIMEOUT: exchange timeout for elimination array
+  // UNIT: exchange timeout unit for elimination array
+  // policy: strategy for in use range of elimination array
 
   public EliminationBackoffStack() {
     top = new AtomicReference<>(null);
-    eliminationArray = new EliminationArray<>(CAPACITY);
+    eliminationArray = new EliminationArray<>(CAPACITY, TIMEOUT, UNIT);
   }
 
+  // 1. Create a new node with given value.
+  // 2. Try pushing it to stack.
+  // 3a. If successful, return.
+  // 3b. Otherwise, try exchanging on elimination array.
+  // 4a. If exchange failed to find a pop, retry 2.
+  // 4b. Otherwise, record success and return.
+  // 4c. If timeout ocurred, record it.
   public void push(T x) {
     RangePolicy p = policy.get();
     Node<T> n = new Node<>(x);
@@ -32,17 +48,23 @@ class EliminationBackoffStack<T> {
     }
   }
 
+  // 1. Try popping a node from stack.
+  // 2a. If successful, return node's value
+  // 2b. Otherwise, try exchanging on elimination array.
+  // 3a. If exchange failed to find a push, retry 1.
+  // 3b. Otherwise, return paired push value.
+  // 3c. If timeout occurred, record it.
   public T pop() throws EmptyStackException {
     RangePolicy p = policy.get();
     while (true) {
-      Node<T> n = tryPop();
-      if (n != null) return n.value;
+      Node<T> n = tryPop(); // 1
+      if (n != null) return n.value; // 2a
       try {
-      T y = eliminationArray.visit(null, p.range());
-      if (y == null) continue;
-      p.onSuccess(); return y;
+      T y = eliminationArray.visit(null, p.range()); // 2b
+      if (y == null) continue; // 3a
+      p.onSuccess(); return y; // 3b
       }
-      catch (TimeoutException e) { p.onTimeout(); }
+      catch (TimeoutException e) { p.onTimeout(); } // 3c
     }
   }
 

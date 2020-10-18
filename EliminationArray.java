@@ -6,20 +6,22 @@ import java.util.concurrent.*;
 
 class EliminationArray<T> {
   Exchanger<T>[] exchangers;
+  final long TIMEOUT;
+  final TimeUnit UNIT;
   Random random;
-  static final long TIMEOUT = 1;
-  static final TimeUnit UNIT = TimeUnit.MILLISECONDS;
   // exchangers: array of exchangers
-  // random: random number generator
   // TIMEOUT: exchange timeout number
   // UNIT: exchange timeout unit
+  // random: random number generator
 
   @SuppressWarnings("unchecked")
-  public EliminationArray(int capacity) {
+  public EliminationArray(int capacity, long timeout, TimeUnit unit) {
     exchangers = new Exchanger[capacity];
     for (int i=0; i<capacity; i++)
       exchangers[i] = new Exchanger<>();
     random = new Random();
+    TIMEOUT = timeout;
+    UNIT = unit;
   }
 
   // 1. Try exchanging value on a random exchanger.
