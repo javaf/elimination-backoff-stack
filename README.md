@@ -7,6 +7,11 @@ concurrency, in case a push/pop fails, it tries to
 pair it with another pop/push to eliminate the operation
 through exchange of values.
 
+> **Course**: [Concurrent Data Structures], Monsoon 2020\
+> **Taught by**: Prof. Govindarajulu Regeti
+
+[Concurrent Data Structures]: https://github.com/iiithf/concurrent-data-structures
+
 ```java
 push():
 1. Create a new node with given value.
